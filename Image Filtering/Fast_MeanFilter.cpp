@@ -37,13 +37,15 @@ void Fast_integral(cv::Mat& src, cv::Mat& dst){
 	dst = cv::Mat::zeros(nr + 1, nc + 1, CV_64F);
 	for (int i = 1; i < dst.rows; ++i){  
 		for (int j = 1, sum_r = 0; j < dst.cols; ++j){
-			sum_r = src.at<uchar>(i-1 , j-1) + sum_r; //行累加
+			//行累加，因为积分图相当于在原图上方加一行，左边加一列，所以积分图的(1,1)对应原图(0,0),(i,j)对应(i-1,j-1)
+			sum_r = src.at<uchar>(i-1 , j-1) + sum_r; 
 			dst.at<double>(i, j) = dst.at<double>(i-1, j)+sum_r;
 		}
 	}
 }
 
 
+//积分图快速均值滤波
 void Fast_MeanFilter(cv::Mat& src, cv::Mat& dst, cv::Size wsize){
 
 	//图像边界扩充
@@ -62,7 +64,7 @@ void Fast_MeanFilter(cv::Mat& src, cv::Mat& dst, cv::Size wsize){
 	Fast_integral(Newsrc, inte);
 
 	//均值滤波
-	int mean = 0;
+	double mean = 0;
 	for (int i = hh+1; i < src.rows + hh + 1;++i){  //积分图图像比原图（边界扩充后的）多一行和一列 
 		for (int j = hw+1; j < src.cols + hw + 1; ++j){
 			double top_left = inte.at<double>(i - hh - 1, j - hw-1);
@@ -70,7 +72,13 @@ void Fast_MeanFilter(cv::Mat& src, cv::Mat& dst, cv::Size wsize){
 			double buttom_left = inte.at<double>(i + hh, j - hw- 1);
 			double buttom_right = inte.at<double>(i+hh,j+hw);
 			mean = (buttom_right - top_right - buttom_left + top_left) / wsize.area();
-			dst.at<uchar>(i - hh-1, j - hw-1) = mean;
+			
+			//一定要进行判断和数据类型转换
+			if (mean < 0)
+				mean = 0;
+			else if (mean>255)
+				mean = 255;
+			dst.at<uchar>(i - hh - 1, j - hw - 1) = static_cast<uchar> (mean);
 		}
 	}
 
@@ -78,7 +86,7 @@ void Fast_MeanFilter(cv::Mat& src, cv::Mat& dst, cv::Size wsize){
 
 
 int main(){
-	cv::Mat src = cv::imread("I:\\Learning-and-Practice\\2019Change\\Image process algorithm\\Img\\28.jpg");
+	cv::Mat src = cv::imread("I:\\Learning-and-Practice\\2019Change\\Image process algorithm\\Img\\Fig0334(a)(hubble-original).tif");
 	if (src.empty()){
 		return -1;
 	}
@@ -87,7 +95,7 @@ int main(){
 
 	cv::Mat dst;
 	double t2 = (double)cv::getTickCount(); //测时间
-	Fast_MeanFilter(src, dst, cv::Size(15,15));//均值滤波
+	Fast_MeanFilter(src, dst, cv::Size(151,151));//均值滤波
 	t2 = (double)cv::getTickCount() - t2;
 	double time2 = (t2 *1000.) / ((double)cv::getTickFrequency());
 	std::cout << "FASTmy_process=" << time2 << " ms. " << std::endl << std::endl;
