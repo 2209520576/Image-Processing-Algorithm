@@ -6,8 +6,8 @@
 
 
 /*图像旋转（以图像中心为旋转中心）*/
-void affine_trans_rotate(cv::Mat& src, cv::Mat& dst, double angle){
-	angle = angle*CV_PI / 180;
+void affine_trans_rotate(cv::Mat& src, cv::Mat& dst, double Angle){
+	double angle = Angle*CV_PI / 180.0;
 	//构造输出图像
 	int dst_rows = round(fabs(src.rows * cos(angle)) + fabs(src.cols * sin(angle)));//图像高度
 	int dst_cols = round(fabs(src.cols * cos(angle)) + fabs(src.rows * sin(angle)));//图像宽度
@@ -19,22 +19,27 @@ void affine_trans_rotate(cv::Mat& src, cv::Mat& dst, double angle){
 		dst = cv::Mat::zeros(dst_rows, dst_cols, CV_8UC3); //RGB图初始
 	}
 
-	cv::Mat T1 = (cv::Mat_<double>(3,3) << 1,0,0 , 0,-1,0, -0.5*src.cols , 0.5*src.rows , 1); // 将原图像坐标映射到数学笛卡尔坐标
-	cv::Mat T2 = (cv::Mat_<double>(3,3) << cos(angle),-sin(angle),0 , sin(angle), cos(angle),0, 0,0,1); //数学笛卡尔坐标下顺时针旋转的变换矩阵
-	double t3[3][3] = { { 1, 0, 0 }, { 0, -1, 0 }, { 0.5*dst.cols, 0.5*dst.rows ,1} }; // 将数学笛卡尔坐标映射到旋转后的图像坐标
-	cv::Mat T3 = cv::Mat(3,3,CV_64FC1,t3);
+	cv::Mat T1 = (cv::Mat_<double>(3,3) << 1.0,0.0,0.0 , 0.0,-1.0,0.0, -0.5*src.cols , 0.5*src.rows , 1.0); // 将原图像坐标映射到数学笛卡尔坐标
+	cv::Mat T2 = (cv::Mat_<double>(3,3) << cos(angle),-sin(angle),0.0 , sin(angle), cos(angle),0.0, 0.0,0.0,1.0); //数学笛卡尔坐标下顺时针旋转的变换矩阵
+	double t3[3][3] = { { 1.0, 0.0, 0.0 }, { 0.0, -1.0, 0.0 }, { 0.5*dst.cols, 0.5*dst.rows ,1.0} }; // 将数学笛卡尔坐标映射到旋转后的图像坐标
+	cv::Mat T3 = cv::Mat(3.0,3.0,CV_64FC1,t3);
 	cv::Mat T = T1*T2*T3;
 	cv::Mat T_inv = T.inv(); // 求逆矩阵
 
-	for (int i = 0; i < dst.rows; i++){
-		for (int j = 0; j < dst.cols; j++){
-			cv::Mat dst_coordinate = (cv::Mat_<double>(1, 3) << j, i, 1);
+	for (double i = 0.0; i < dst.rows; i++){
+		for (double j = 0.0; j < dst.cols; j++){
+			cv::Mat dst_coordinate = (cv::Mat_<double>(1, 3) << j, i, 1.0);
 			cv::Mat src_coordinate = dst_coordinate * T_inv;
 			double v = src_coordinate.at<double>(0, 0); // 原图像的横坐标，列，宽
 			double w = src_coordinate.at<double>(0, 1); // 原图像的纵坐标，行，高
 
 			/*双线性插值*/
 			// 判断是否越界
+			if (int(Angle) % 90 == 0) {
+				if (v < 0) v = 0; if (v > src.cols - 1) v = src.cols - 1;
+				if (w < 0) w = 0; if (w > src.rows - 1) w = src.rows - 1; //必须要加上，否则会出现边界问题
+			}
+
 			if (v >= 0 && w >= 0 && v <= src.cols - 1 && w <= src.rows - 1){
 				int top = floor(w), bottom = ceil(w), left = floor(v), right = ceil(v); //与映射到原图坐标相邻的四个像素点的坐标
 				double pw = w - top ; //pw为坐标 行 的小数部分(坐标偏差)
@@ -83,6 +88,7 @@ void affine_trans_translation(cv::Mat& src, cv::Mat& dst, double tx, double ty){
 
 			/*双线性插值*/
 			// 判断是否越界
+
 			if (v >= 0 && w >= 0 && v <= src.cols - 1 && w <= src.rows - 1){
 				int top = floor(w), bottom = ceil(w), left = floor(v), right = ceil(v); //与映射到原图坐标相邻的四个像素点的坐标
 				double pw = w - top; //pw为坐标 行 的小数部分(坐标偏差)
@@ -132,6 +138,9 @@ void affine_trans_scale(cv::Mat& src, cv::Mat& dst, double cx, double cy){
 
 			/*双线性插值*/
 			// 判断是否越界
+			if (v < 0) v = 0; if (v > src.cols - 1) v = src.cols - 1;
+			if (w < 0) w = 0; if (w > src.rows - 1) w = src.rows - 1; 
+
 			if (v >= 0 && w >= 0 && v <= src.cols - 1 && w <= src.rows - 1){
 				int top = floor(w), bottom = ceil(w), left = floor(v), right = ceil(v); //与映射到原图坐标相邻的四个像素点的坐标
 				double pw = w - top; //pw为坐标 行 的小数部分(坐标偏差)
@@ -184,6 +193,7 @@ void affine_trans_deviation(cv::Mat& src, cv::Mat& dst, double sx, double sy){
 
 			/*双线性插值*/
 			// 判断是否越界
+
 			if (v >= 0 && w >= 0 && v <= src.cols - 1 && w <= src.rows - 1){
 				int top = floor(w), bottom = ceil(w), left = floor(v), right = ceil(v); //与映射到原图坐标相邻的四个像素点的坐标
 				double pw = w - top; //pw为坐标 行 的小数部分(坐标偏差)
@@ -205,8 +215,8 @@ void affine_trans_deviation(cv::Mat& src, cv::Mat& dst, double sx, double sy){
 
 /*组合变换*/
 /*变换顺序：缩放->旋转—>偏移*/
-void affine_trans_comb(cv::Mat& src, cv::Mat& dst, double cx, double cy, double angle, double sx, double sy){
-	angle = angle*CV_PI / 180;
+void affine_trans_comb(cv::Mat& src, cv::Mat& dst, double cx, double cy, double Angle, double sx, double sy){
+	double angle = Angle*CV_PI / 180;
 	//构造输出图像
 	int dst_s_rows = round(cy*src.rows);//尺度变换后图像高度
 	int dst_s_cols = round(cx*src.cols);//尺度变换后图像宽度
@@ -249,6 +259,11 @@ void affine_trans_comb(cv::Mat& src, cv::Mat& dst, double cx, double cy, double 
 
 			/*双线性插值*/
 			// 判断是否越界
+			if (int(Angle) % 90 == 0) {
+				if (v < 0) v = 0; if (v > src.cols - 1) v = src.cols - 1;
+				if (w < 0) w = 0; if (w > src.rows - 1) w = src.rows - 1; //必须要加上，否则会出现边界问题
+			}
+
 			if (v >= 0 && w >= 0 && v <= src.cols - 1 && w <= src.rows - 1){
 				int top = floor(w), bottom = ceil(w), left = floor(v), right = ceil(v); //与映射到原图坐标相邻的四个像素点的坐标
 				double pw = w - top; //pw为坐标 行 的小数部分(坐标偏差)
@@ -270,17 +285,17 @@ void affine_trans_comb(cv::Mat& src, cv::Mat& dst, double cx, double cy, double 
 
 
 int main(){
-	cv::Mat src = cv::imread("I:\\Learning and Practice\\2019Change\\Image process algorithm\\Img\\lena.jpg");
-	//cvtColor(src, src, CV_BGR2GRAY);
+	cv::Mat src = cv::imread("I:\\Learning-and-Practice\\2019Change\\Image process algorithm\\Img\\5.bmp");
+	cvtColor(src, src, CV_BGR2GRAY);
 	if (src.empty()){
 		std::cout << "Failure to load image..." << std::endl;
 		return -1;
 	}
 	cv::Mat dst;
-	double angle = 40;  //旋转角度
-	double tx = 100, ty = 100; //平移距离
-	double cx = 0.5, cy = 0.6; //缩放尺度
-	double sx = 0.3, sy =0.5; //偏移尺度
+	double angle =250;  //旋转角度
+	double tx = 50, ty = -50; //平移距离
+	double cx =1.5, cy = 1.5; //缩放尺度
+	double sx = 0.2, sy =0.2; //偏移尺度
 
 	//affine_trans_rotate(src, dst, angle); //旋转
 
@@ -292,10 +307,10 @@ int main(){
 
 	affine_trans_comb(src, dst, cx,  cy, angle, sx,  sy); // 缩放->旋转—>偏移
 
-	cv::imwrite("I:\\Learning and Practice\\2019Change\\Image process algorithm\\Affine Transformation\\Affine Transformation\\comb.jpg",dst);
+	//cv::imwrite("result.jpg", dst);
 	cv::namedWindow("src");
 	cv::imshow("src", src);
-	cv::namedWindow("dst");
+	cv::namedWindow("dst",CV_WINDOW_NORMAL);
 	cv::imshow("dst", dst);
 	cv::waitKey(0);
 }
