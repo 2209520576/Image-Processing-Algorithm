@@ -69,14 +69,26 @@ void Histogram_equalization(cv::Mat& src, cv::Mat& dst){
 	}
 }
 
+
+
+/***************************************
+BERF滤波器
+src - 输入图像
+dst - 输出图像
+step_r  - 子块垂直移动步长
+step_c  - 子块水平移动步长
+step_levels - 灰度级缓慢变化的步长
+large_dir  - 最大灰度差异
+****************************************/
 void BERF(cv::Mat& src, cv::Mat& dst, int step_r, int step_c , int step_levels, int large_dir){
+
 	//处理子块的行边界（横向边界）
 	for (int i = 0; i < dst.rows;){
 		for (int j = 0; j < dst.cols; ++j){
-			if (i - 1 >= 0 && i + 1 <= dst.rows - 1){ //边界判断，先排除第一行和最后一行
+			if (i - 1 >= 0 && i + 1 <= dst.rows - 1){ //图像边界判断，先排除第一行和最后一行
 				//块效应检查
-				int dfacter_newsrc = abs(src.at<uchar>(i, j) - src.at<uchar>(i + 1, j)) + abs(src.at<uchar>(i, j) - src.at<uchar>(i - 1, j));
-				int dfacter_dst = abs(dst.at<uchar>(i, j) - dst.at<uchar>(i + 1, j)) + abs(dst.at<uchar>(i, j) - dst.at<uchar>(i - 1, j));
+				int dfacter_newsrc = abs(src.at<uchar>(i, j) - src.at<uchar>(i + 1, j)) + abs(src.at<uchar>(i, j) - src.at<uchar>(i - 1, j)); //原图子块边界与相邻两侧像素的灰度差异
+				int dfacter_dst = abs(dst.at<uchar>(i, j) - dst.at<uchar>(i + 1, j)) + abs(dst.at<uchar>(i, j) - dst.at<uchar>(i - 1, j)); //POSHEed图子块边界与相邻两侧像素的灰度差异
 				if (dfacter_dst - dfacter_newsrc > step_levels){
 					//存在块效应执行BERF
 					int b = 0;
@@ -84,14 +96,14 @@ void BERF(cv::Mat& src, cv::Mat& dst, int step_r, int step_c , int step_levels, 
 					dst.at<uchar>(i, j) = ave_bound;
 
 					if (dst.at<uchar>(i - 1, j) > dst.at<uchar>(i + 1, j)){ //垂直于子块边界，向上递增方向（ increasing rule）
-						if (i - 2 - b >= 0){ //图像边界判断
+						if (i - 2 - b >= 0){ //图像边界判断(下一位置像素)
 							int pixel_present_add = dst.at<uchar>(i - 1 - b, j);
 							int pixel_next_add = dst.at<uchar>(i - 2 - b, j);
 							pixel_present_add = ave_bound + step_levels;
 							while (i - 2 - b >= 0 && pixel_next_add - pixel_present_add >= step_levels && pixel_next_add - pixel_present_add <= large_dir){
 								pixel_next_add = pixel_present_add + step_levels;
 								b += 1;
-								if (i - 2 - b >= 0){ //图像边界判断
+								if (i - 2 - b >= 0){ //图像边界判断(下一位置像素)
 									pixel_present_add = dst.at<uchar>(i - 1 - b, j);
 									pixel_next_add = dst.at<uchar>(i - 2 - b, j);
 								}
@@ -155,7 +167,7 @@ void BERF(cv::Mat& src, cv::Mat& dst, int step_r, int step_c , int step_levels, 
 			if (j - 1 >= 0 && j + 1 <= dst.cols - 1){ //图像边界判断，先排除第一列和最后一列
 				//块效应检查
 				int dfacter_newsrc = abs(src.at<uchar>(i, j) - src.at<uchar>(i, j + 1)) + abs(src.at<uchar>(i, j) - src.at<uchar>(i, j - 1));
-				int dfacter_dst = abs(dst.at<uchar>(i, j) - dst.at<uchar>(i, j + 1)) + abs(dst.at<uchar>(i, j) - dst.at<uchar>(i, j + 1));
+				int dfacter_dst = abs(dst.at<uchar>(i, j) - dst.at<uchar>(i, j + 1)) + abs(dst.at<uchar>(i, j) - dst.at<uchar>(i, j - 1));
 				if (dfacter_dst - dfacter_newsrc > step_levels){
 					//存在块效应执行BERF
 					int b = 0;
@@ -195,7 +207,7 @@ void BERF(cv::Mat& src, cv::Mat& dst, int step_r, int step_c , int step_levels, 
 					else if (dst.at<uchar>(i, j - 1) < dst.at<uchar>(i, j + 1)){ ////垂直于子块边界，向右递增方向（ increasing rule）
 						if (j + 2 + b < dst.cols){ //图像边界判断
 							int pixel_present_add = dst.at<uchar>(i, j + 1 + b);
-							int pixel_next_add = dst.at<uchar>(i, j + 1 + b);
+							int pixel_next_add = dst.at<uchar>(i, j + 2 + b);
 							pixel_present_add = ave_bound + step_levels;
 							while (j + 2 + b >= 0 && pixel_next_add - pixel_present_add >= step_levels && pixel_next_add - pixel_present_add <= large_dir){
 								pixel_next_add = pixel_present_add + step_levels;
@@ -257,10 +269,10 @@ void Poshe(cv::Mat& src, cv::Mat& dst, cv::Mat& newsrc_draw,float s, float k){
 	//对当前子块进行直方图均衡
 	int sub_block_x ; //子块左顶点坐标(行)
 	int sub_block_y; //子块左顶点坐标(列)
-	cv::Mat HE_frequency = cv::Mat::zeros(newnr, newnc, CV_8U); //均衡频率计数矩阵
+	cv::Mat HE_frequency = cv::Mat::zeros(newnr, newnc, CV_16U); //均衡频率计数矩阵,在累加过程中会超过这个范围，所以采用16位无符号整型
 	cv::Mat sub_block_HE;
 	newsrc.copyTo(newsrc_draw);
-	for (sub_block_x=0; sub_block_x <= (newnr - sub_block_r); ){
+	for (sub_block_x=0; sub_block_x <= (newnr - sub_block_r ); ){
 		for (sub_block_y = 0; sub_block_y <= (newnc - sub_block_c); ){
 			cv::Mat sub_block = newsrc(cv::Rect(sub_block_y, sub_block_x, sub_block_c, sub_block_r));
 			Histogram_equalization(sub_block, sub_block_HE);
@@ -272,7 +284,7 @@ void Poshe(cv::Mat& src, cv::Mat& dst, cv::Mat& newsrc_draw,float s, float k){
 				 int sub_block_HE_j = 0;
 				for (int j = sub_block_y; j < sub_block_y + sub_block_c; j++){	 
 					 dst.at<ushort>(i, j) = dst.at<ushort>(i, j) + sub_block_HE.at<uchar>(sub_block_HE_i, sub_block_HE_j);
-					 HE_frequency.at<uchar>(i, j)++;
+					 HE_frequency.at<ushort>(i, j)++; 
 					 sub_block_HE_j++;
 				}
 				sub_block_HE_i++;	
@@ -285,13 +297,13 @@ void Poshe(cv::Mat& src, cv::Mat& dst, cv::Mat& newsrc_draw,float s, float k){
 
 	for (int i = 0; i < dst.rows; ++i){
 		for (int j = 0; j < dst.cols; ++j){
-			dst.at<ushort>(i, j) = (dst.at<ushort>(i, j)) / (HE_frequency.at<uchar>(i, j));
+			dst.at<ushort>(i, j) = (dst.at<ushort>(i, j)) / (HE_frequency.at<ushort>(i, j));
 		}
 	}
 	dst.convertTo(dst, CV_8U, 1, 0); //数据类型转换
 
 	//BERF
-	int step_levels = 3; 
+	int step_levels = 2; 
 	int large_dir = 40;
 	BERF(newsrc, dst, step_r, step_c, step_levels, large_dir);
 
@@ -301,20 +313,20 @@ void Poshe(cv::Mat& src, cv::Mat& dst, cv::Mat& newsrc_draw,float s, float k){
 
 
 int main(){
-	cv::Mat src = cv::imread("I:\\Learning-and-Practice\\2019Change\\Image process algorithm\\Img\\ya.png");
+	cv::Mat src = cv::imread("I:\\Learning-and-Practice\\2019Change\\Image process algorithm\\Img\\vessel.bmp");
 	if (src.empty()){
 		return -1;
 	}
 	cvtColor(src, src, CV_RGB2GRAY);
 	cv::Mat dst;
 	cv::Mat newsrc_draw;
-	Poshe(src, dst, newsrc_draw, 3.0, 12.0); //poshe
+	Poshe(src, dst, newsrc_draw, 2, 16); //poshe
 	cv::namedWindow("src");
 	cv::imshow("src", src);
-	cv::namedWindow("dst");
-	cv::imshow("dst", dst);
 	cv::namedWindow("newsrc_draw");
 	cv::imshow("newsrc_draw", newsrc_draw);
-	cv::imwrite("I:/Learning-and-Practice/2019Change/Image process algorithm/POSHE/POSHE/ya_ff.jpg", dst);
+	cv::namedWindow("dst", CV_WINDOW_NORMAL);
+	cv::imshow("dst", dst);
+	cv::imwrite("I:/Learning-and-Practice/2019Change/Image process algorithm/POSHE/POSHE/re_vessel.bmp", dst);
 	cv::waitKey(0);
 }
