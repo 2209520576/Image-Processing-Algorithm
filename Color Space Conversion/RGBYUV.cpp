@@ -7,7 +7,7 @@ using namespace cv;
 cv::Mat RGB2YUV(cv::Mat src, bool accelerate = false){
 
 	CV_Assert(src.channels() == 3);
-	cv::Mat dst(src.size(), CV_32FC3);  //ÕâÀï×îºÃÒªÓÃ¸¡µãĞÍ,±ÜÃâÉ¥Ê§½ø¶È
+	cv::Mat dst(src.size(), CV_32FC3);  //è¿™é‡Œæœ€å¥½è¦ç”¨æµ®ç‚¹å‹,é¿å…ä¸§å¤±ç²¾åº¦
 	cv::Vec3b rgb;
 	int r = src.rows;
 	int c = src.cols;
@@ -34,7 +34,7 @@ cv::Mat RGB2YUV(cv::Mat src, bool accelerate = false){
 
 cv::Mat YUV2RGB(cv::Mat src, bool accelerate = false){
 	CV_Assert(src.channels() == 3);
-	cv::Mat dst(src.size(), CV_32FC3); //ÕâÀïÒ»¶¨ÒªÓÃ¸¡µãĞÍ,±ÜÃâÉ¥Ê§½ø¶È
+	cv::Mat dst(src.size(), CV_32FC3); //è¿™é‡Œä¸€å®šè¦ç”¨æµ®ç‚¹å‹,é¿å…ä¸§å¤±ç²¾åº¦
 	cv::Vec3b yuv;
 	int r = src.rows;
 	int c = src.cols;
@@ -69,8 +69,8 @@ int main(){
 	}
 	cv::Mat dst, dst1, dst2;
 
-	////////opencv×Ô´ø/////////
-	double t2 = (double)cv::getTickCount(); //²âÊ±¼ä
+	////////opencvè‡ªå¸¦/////////
+	double t2 = (double)cv::getTickCount(); //æµ‹æ—¶é—´
 
 	cv::cvtColor(src, dst1, CV_RGB2YUV); //RGB2YUV
 
@@ -79,7 +79,7 @@ int main(){
 	std::cout << "Opencv_RGB2YUV=" << time2 << " ms. " << std::endl << std::endl;
 
 	//////////RGB2YUV//////////
-	double t1 = (double)cv::getTickCount(); //²âÊ±¼ä
+	double t1 = (double)cv::getTickCount(); //æµ‹æ—¶é—´
 
 	dst = RGB2YUV(src,true); //RGB2YUV
 	dst2 = YUV2RGB(dst,true); //YUV2BGR
