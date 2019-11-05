@@ -2,11 +2,11 @@
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
-////////////////////sobelËã×Ó/////////////////////////
-//½×³Ë
+////////////////////sobelç®—å­/////////////////////////
+//é˜¶ä¹˜
 int factorial(int n){
 	int fac = 1;
-	//0µÄ½×³Ë
+	//0çš„é˜¶ä¹˜
 	if (n == 0)
 		return fac;
 	for (int i = 1; i <= n; ++i){
@@ -15,7 +15,7 @@ int factorial(int n){
 	return fac;
 }
 
-//»ñµÃSobelÆ½»¬Ëã×Ó
+//è·å¾—Sobelå¹³æ»‘ç®—å­
 cv::Mat getSobelSmoooth(int wsize){
 	int n = wsize - 1;
 	cv::Mat SobelSmooothoper = cv::Mat::zeros(cv::Size(wsize, 1), CV_32FC1);
@@ -26,7 +26,7 @@ cv::Mat getSobelSmoooth(int wsize){
 	return SobelSmooothoper;
 }
 
-//»ñµÃSobel²î·ÖËã×Ó
+//è·å¾—Sobelå·®åˆ†ç®—å­
 cv::Mat getSobeldiff(int wsize){
 	cv::Mat Sobeldiffoper = cv::Mat::zeros(cv::Size(wsize, 1), CV_32FC1);
 	cv::Mat SobelSmoooth = getSobelSmoooth(wsize - 1);
@@ -41,7 +41,7 @@ cv::Mat getSobeldiff(int wsize){
 	return Sobeldiffoper;
 }
 
-//¾í»ıÊµÏÖ
+//å·ç§¯å®ç°
 void conv2D(cv::Mat& src, cv::Mat& dst, cv::Mat kernel, int ddepth, cv::Point anchor = cv::Point(-1, -1), int delta = 0, int borderType = cv::BORDER_DEFAULT){
 	cv::Mat  kernelFlip;
 	cv::flip(kernel, kernelFlip, -1);
@@ -49,42 +49,42 @@ void conv2D(cv::Mat& src, cv::Mat& dst, cv::Mat kernel, int ddepth, cv::Point an
 }
 
 
-//¿É·ÖÀë¾í»ı¡ª¡ª¡ªÏÈ´¹Ö±·½Ïò¾í»ı£¬ºóË®Æ½·½Ïò¾í»ı
+//å¯åˆ†ç¦»å·ç§¯â€”â€”â€”å…ˆå‚ç›´æ–¹å‘å·ç§¯ï¼Œåæ°´å¹³æ–¹å‘å·ç§¯
 void sepConv2D_Y_X(cv::Mat& src, cv::Mat& dst, cv::Mat kernel_Y, cv::Mat kernel_X, int ddepth, cv::Point anchor = cv::Point(-1, -1), int delta = 0, int borderType = cv::BORDER_DEFAULT){
 	cv::Mat dst_kernel_Y;
-	conv2D(src, dst_kernel_Y, kernel_Y, ddepth, anchor, delta, borderType); //´¹Ö±·½Ïò¾í»ı
-	conv2D(dst_kernel_Y, dst, kernel_X, ddepth, anchor, delta, borderType); //Ë®Æ½·½Ïò¾í»ı
+	conv2D(src, dst_kernel_Y, kernel_Y, ddepth, anchor, delta, borderType); //å‚ç›´æ–¹å‘å·ç§¯
+	conv2D(dst_kernel_Y, dst, kernel_X, ddepth, anchor, delta, borderType); //æ°´å¹³æ–¹å‘å·ç§¯
 }
 
-//¿É·ÖÀë¾í»ı¡ª¡ª¡ªÏÈË®Æ½·½Ïò¾í»ı£¬ºó´¹Ö±·½Ïò¾í»ı
+//å¯åˆ†ç¦»å·ç§¯â€”â€”â€”å…ˆæ°´å¹³æ–¹å‘å·ç§¯ï¼Œåå‚ç›´æ–¹å‘å·ç§¯
 void sepConv2D_X_Y(cv::Mat& src, cv::Mat& dst, cv::Mat kernel_X, cv::Mat kernel_Y, int ddepth, cv::Point anchor = cv::Point(-1, -1), int delta = 0, int borderType = cv::BORDER_DEFAULT){
 	cv::Mat dst_kernel_X;
-	conv2D(src, dst_kernel_X, kernel_X, ddepth, anchor, delta, borderType); //Ë®Æ½·½Ïò¾í»ı
-	conv2D(dst_kernel_X, dst, kernel_Y, ddepth, anchor, delta, borderType); //´¹Ö±·½Ïò¾í»ı
+	conv2D(src, dst_kernel_X, kernel_X, ddepth, anchor, delta, borderType); //æ°´å¹³æ–¹å‘å·ç§¯
+	conv2D(dst_kernel_X, dst, kernel_Y, ddepth, anchor, delta, borderType); //å‚ç›´æ–¹å‘å·ç§¯
 }
 
 
-//SobelËã×Ó±ßÔµ¼ì²â
-//dst_X ´¹Ö±·½Ïò
-//dst_Y Ë®Æ½·½Ïò
+//Sobelç®—å­è¾¹ç¼˜æ£€æµ‹
+//dst_X å‚ç›´æ–¹å‘
+//dst_Y æ°´å¹³æ–¹å‘
 void Sobel(cv::Mat& src, cv::Mat& dst_X, cv::Mat& dst_Y, cv::Mat& dst, int wsize, int ddepth, cv::Point anchor = cv::Point(-1, -1), int delta = 0, int borderType = cv::BORDER_DEFAULT){
 
-	cv::Mat SobelSmooothoper = getSobelSmoooth(wsize); //Æ½»¬ÏµÊı
-	cv::Mat Sobeldiffoper = getSobeldiff(wsize); //²î·ÖÏµÊı
+	cv::Mat SobelSmooothoper = getSobelSmoooth(wsize); //å¹³æ»‘ç³»æ•°
+	cv::Mat Sobeldiffoper = getSobeldiff(wsize); //å·®åˆ†ç³»æ•°
 
-	//¿É·ÖÀë¾í»ı¡ª¡ª¡ªÏÈ´¹Ö±·½ÏòÆ½»¬£¬ºóË®Æ½·½Ïò²î·Ö¡ª¡ªµÃµ½´¹Ö±±ßÔµ
+	//å¯åˆ†ç¦»å·ç§¯â€”â€”â€”å…ˆå‚ç›´æ–¹å‘å¹³æ»‘ï¼Œåæ°´å¹³æ–¹å‘å·®åˆ†â€”â€”å¾—åˆ°å‚ç›´è¾¹ç¼˜
 	sepConv2D_Y_X(src, dst_X, SobelSmooothoper.t(), Sobeldiffoper, ddepth);
 
-	//¿É·ÖÀë¾í»ı¡ª¡ª¡ªÏÈË®Æ½·½ÏòÆ½»¬£¬ºó´¹Ö±·½Ïò²î·Ö¡ª¡ªµÃµ½Ë®Æ½±ßÔµ
+	//å¯åˆ†ç¦»å·ç§¯â€”â€”â€”å…ˆæ°´å¹³æ–¹å‘å¹³æ»‘ï¼Œåå‚ç›´æ–¹å‘å·®åˆ†â€”â€”å¾—åˆ°æ°´å¹³è¾¹ç¼˜
 	sepConv2D_X_Y(src, dst_Y, SobelSmooothoper, Sobeldiffoper.t(), ddepth);
 
-	//±ßÔµÇ¿¶È£¨½üËÆ£©
+	//è¾¹ç¼˜å¼ºåº¦ï¼ˆè¿‘ä¼¼ï¼‰
 	dst = abs(dst_X) + abs(dst_Y);
-	cv::convertScaleAbs(dst, dst); //Çó¾ø¶ÔÖµ²¢×ªÎªÎŞ·ûºÅ8Î»Í¼
+	cv::convertScaleAbs(dst, dst); //æ±‚ç»å¯¹å€¼å¹¶è½¬ä¸ºæ— ç¬¦å·8ä½å›¾
 }
 
 
-//È·¶¨Ò»¸öµãµÄ×ø±êÊÇ·ñÔÚÍ¼ÏñÄÚ
+//ç¡®å®šä¸€ä¸ªç‚¹çš„åæ ‡æ˜¯å¦åœ¨å›¾åƒå†…
 bool checkInRang(int r,int c, int rows, int cols){
 	if (r >= 0 && r < rows && c >= 0 && c < cols)
 		return true;
@@ -92,7 +92,7 @@ bool checkInRang(int r,int c, int rows, int cols){
 		return false;
 }
 
-//´ÓÈ·¶¨±ßÔµµã³ö·¢£¬ÑÓ³¤±ßÔµ
+//ä»ç¡®å®šè¾¹ç¼˜ç‚¹å‡ºå‘ï¼Œå»¶é•¿è¾¹ç¼˜
 void trace(cv::Mat &edgeMag_noMaxsup, cv::Mat &edge, float TL,int r,int c,int rows,int cols){
 	if (edge.at<uchar>(r, c) == 0){
 		edge.at<uchar>(r, c) = 255;
@@ -106,33 +106,35 @@ void trace(cv::Mat &edgeMag_noMaxsup, cv::Mat &edge, float TL,int r,int c,int ro
 	}
 }
 
-//Canny±ßÔµ¼ì²â
+//Cannyè¾¹ç¼˜æ£€æµ‹
 void Edge_Canny(cv::Mat &src, cv::Mat &edge, float TL, float TH, int wsize=3, bool L2graydient = false){
 	int rows = src.rows;
 	int cols = src.cols;
 
-	//¸ßË¹ÂË²¨
+	//é«˜æ–¯æ»¤æ³¢
 	cv::GaussianBlur(src,src,cv::Size(5,5),0.8);
-	//sobelËã×Ó
+	//sobelç®—å­
 	cv::Mat dx, dy, sobel_dst;
 	Sobel(src, dx, dy, sobel_dst, wsize, CV_32FC1);
 
-	//¼ÆËãÌİ¶È·ùÖµ
+	//è®¡ç®—æ¢¯åº¦å¹…å€¼
 	cv::Mat edgeMag;
-	if (L2graydient = false)  edgeMag = abs(dx) + abs(dy); //¾ø¶ÔÖµÖ®ºÍ½üËÆ
-	else if (L2graydient = true)  cv::magnitude(dx, dy, edgeMag); //¿ªÆ½·½
+	if (L2graydient)
+		cv::magnitude(dx, dy, edgeMag); //å¼€å¹³æ–¹
+	else
+		edgeMag = abs(dx) + abs(dy); //ç»å¯¹å€¼ä¹‹å’Œè¿‘ä¼¼
 
-	//¼ÆËãÌİ¶È·½Ïò ÒÔ¼° ·Ç¼«´óÖµÒÖÖÆ
+	//è®¡ç®—æ¢¯åº¦æ–¹å‘ ä»¥åŠ éæå¤§å€¼æŠ‘åˆ¶
 	cv::Mat edgeMag_noMaxsup = cv::Mat::zeros(rows, cols, CV_32FC1);
 	for (int r = 1; r < rows - 1; ++r){
 		for (int c = 1; c < cols - 1; ++c){
 			float x = dx.at<float>(r, c);
 			float y = dy.at<float>(r, c);
-			float angle = std::atan2f(y, x) / CV_PI * 180; //µ±Ç°Î»ÖÃÌİ¶È·½Ïò
-			float mag = edgeMag.at<float>(r, c);  //µ±Ç°Î»ÖÃÌİ¶È·ùÖµ
+			float angle = std::atan2f(y, x) / CV_PI * 180; //å½“å‰ä½ç½®æ¢¯åº¦æ–¹å‘
+			float mag = edgeMag.at<float>(r, c);  //å½“å‰ä½ç½®æ¢¯åº¦å¹…å€¼
 
-			//·Ç¼«´óÖµÒÖÖÆ
-			//´¹Ö±±ßÔµ--Ìİ¶È·½ÏòÎªË®Æ½·½Ïò-3*3ÁÚÓòÄÚ×óÓÒ·½Ïò±È½Ï
+			//éæå¤§å€¼æŠ‘åˆ¶
+			//å‚ç›´è¾¹ç¼˜--æ¢¯åº¦æ–¹å‘ä¸ºæ°´å¹³æ–¹å‘-3*3é‚»åŸŸå†…å·¦å³æ–¹å‘æ¯”è¾ƒ
 			if (abs(angle)<22.5 || abs(angle)>157.5){
 				float left = edgeMag.at<float>(r, c - 1);
 				float right = edgeMag.at<float>(r, c + 1);
@@ -140,7 +142,7 @@ void Edge_Canny(cv::Mat &src, cv::Mat &edge, float TL, float TH, int wsize=3, bo
 					edgeMag_noMaxsup.at<float>(r, c) = mag;
 			}
 		
-			//Ë®Æ½±ßÔµ--Ìİ¶È·½ÏòÎª´¹Ö±·½Ïò-3*3ÁÚÓòÄÚÉÏÏÂ·½Ïò±È½Ï
+			//æ°´å¹³è¾¹ç¼˜--æ¢¯åº¦æ–¹å‘ä¸ºå‚ç›´æ–¹å‘-3*3é‚»åŸŸå†…ä¸Šä¸‹æ–¹å‘æ¯”è¾ƒ
 			if ((angle>=67.5 && angle<=112.5 ) || (angle>=-112.5 && angle<=-67.5)){
 				float top = edgeMag.at<float>(r-1, c);
 				float down = edgeMag.at<float>(r+1, c);
@@ -148,7 +150,7 @@ void Edge_Canny(cv::Mat &src, cv::Mat &edge, float TL, float TH, int wsize=3, bo
 					edgeMag_noMaxsup.at<float>(r, c) = mag;
 			}
 
-			//+45¡ã±ßÔµ--Ìİ¶È·½ÏòÎªÆäÕı½»·½Ïò-3*3ÁÚÓòÄÚÓÒÉÏ×óÏÂ·½Ïò±È½Ï
+			//+45Â°è¾¹ç¼˜--æ¢¯åº¦æ–¹å‘ä¸ºå…¶æ­£äº¤æ–¹å‘-3*3é‚»åŸŸå†…å³ä¸Šå·¦ä¸‹æ–¹å‘æ¯”è¾ƒ
 			if ((angle>112.5 && angle<=157.5) || (angle>-67.5 && angle<=-22.5)){
 				float right_top = edgeMag.at<float>(r - 1, c+1);
 				float left_down = edgeMag.at<float>(r + 1, c-1);
@@ -157,7 +159,7 @@ void Edge_Canny(cv::Mat &src, cv::Mat &edge, float TL, float TH, int wsize=3, bo
 			}
 
 
-			//+135¡ã±ßÔµ--Ìİ¶È·½ÏòÎªÆäÕı½»·½Ïò-3*3ÁÚÓòÄÚÓÒÏÂ×óÉÏ·½Ïò±È½Ï
+			//+135Â°è¾¹ç¼˜--æ¢¯åº¦æ–¹å‘ä¸ºå…¶æ­£äº¤æ–¹å‘-3*3é‚»åŸŸå†…å³ä¸‹å·¦ä¸Šæ–¹å‘æ¯”è¾ƒ
 			if ((angle >=22.5 && angle < 67.5) || (angle >= -157.5 && angle < -112.5)){
 				float left_top = edgeMag.at<float>(r - 1, c - 1);
 				float right_down = edgeMag.at<float>(r + 1, c + 1);
@@ -167,12 +169,12 @@ void Edge_Canny(cv::Mat &src, cv::Mat &edge, float TL, float TH, int wsize=3, bo
 		}
 	}
 
-	//Ë«ãĞÖµ´¦Àí¼°±ßÔµÁ¬½Ó
+	//åŒé˜ˆå€¼å¤„ç†åŠè¾¹ç¼˜è¿æ¥
 	edge = cv::Mat::zeros(rows, cols, CV_8UC1);
 	for (int r = 1; r < rows - 1; ++r){
 		for (int c = 1; c < cols - 1; ++c){
 			float mag = edgeMag_noMaxsup.at<float>(r, c);
-			//´óÓÚ¸ßãĞÖµ£¬ÎªÈ·¶¨±ßÔµµã
+			//å¤§äºé«˜é˜ˆå€¼ï¼Œä¸ºç¡®å®šè¾¹ç¼˜ç‚¹
 			if (mag >= TH)
 				trace(edgeMag_noMaxsup, edge, TL, r, c, rows, cols);
 			else if (mag < TL)
@@ -192,7 +194,7 @@ int main(){
 	//Canny
 	Edge_Canny(src, edge, 50,128);
 
-	//opencv×Ô´øCanny
+	//opencvè‡ªå¸¦Canny
 	cv::Canny(src, dst, 50, 150);
 
 	cv::namedWindow("src", CV_WINDOW_NORMAL);
